@@ -21,9 +21,13 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
     private File metaFile;
     private File dataDirectory;
     private ArrayList<IndexedStorageFile> indexedFiles;
+    private boolean read = false;
 
     @Override
     public void read(File folder, boolean gcAfter) throws IOException {
+        if(read) {
+            throw new IOException("Database is already locked");
+        }
         if(!folder.exists()) {
             isEmpty = true;
             if(!folder.mkdirs()) {
@@ -36,6 +40,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
         readMeta();
         readKeyIndexes();
         indexDataFiles();
+        this.read = true;
         if(gcAfter) {
             System.gc();
         }
@@ -165,49 +170,55 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
     }
 
     @Override
-    public void set(String key, String data) throws IOException {
-        this.set(Collections.singletonMap(key, data));
+    public void set(String key, String value) throws IOException {
+        FileOutputStream indexes = new FileOutputStream(keyIndexesFile, true);
+        write(indexes, key, value);
+        indexes.close();
+        writeMeta(keys.size());
     }
 
     @Override
     public void set(Map<String, String> bulkSet) throws IOException {
-
         FileOutputStream indexes = new FileOutputStream(keyIndexesFile, true);
         for(Map.Entry<String, String> entry : bulkSet.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            if(indexedFiles.isEmpty()){
-                indexedFiles.add(createNewFile());
-            }
-            IndexedStorageFile lastFile = getLastStorageFile();
-            if((lastFile.getFile().length() + calculateBytesSizeToWrite(value)) > maxFileSize) {
-                lastFile = createNewFile();
-                indexedFiles.add(lastFile);
-            }
-            long position = this.lastPosition + 1;
-            FileOutputStream dataFile = new FileOutputStream(lastFile.getFile(), true);
-            byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);
-            byte[] valueWriteData = new byte[4 + valueBytes.length];
-
-            System.arraycopy(ByteConverters.intToBytes(valueBytes.length), 0, valueWriteData, 0, 4);
-            System.arraycopy(valueBytes, 0, valueWriteData, 4, valueBytes.length);
-            dataFile.write(valueWriteData);
-            this.lastPosition += valueWriteData.length;
-            dataFile.close();
-            // write the index
-
-            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
-            int keyLength = keyBytes.length;
-            byte[] indexWriteData = new byte[12 + keyLength];
-            byte[] stringLength = ByteConverters.intToBytes(keyLength);
-            System.arraycopy(stringLength, 0, indexWriteData, 0, 4);
-            System.arraycopy(ByteConverters.longToBytes(position), 0, indexWriteData, 4, 8);
-            System.arraycopy(keyBytes, 0, indexWriteData, 12, keyLength);
-            indexes.write(indexWriteData);
-            keys.add(new DatabaseEntry(key, position));
+            write(indexes, key, value);
         }
         indexes.close();
         writeMeta(keys.size());
+    }
+
+    private void write(FileOutputStream indexes, String key, String value) throws IOException{
+        if(indexedFiles.isEmpty()){
+            indexedFiles.add(createNewFile());
+        }
+        IndexedStorageFile lastFile = getLastStorageFile();
+        if((lastFile.getFile().length() + calculateBytesSizeToWrite(value)) > maxFileSize) {
+            lastFile = createNewFile();
+            indexedFiles.add(lastFile);
+        }
+        long position = this.lastPosition + 1;
+        FileOutputStream dataFile = new FileOutputStream(lastFile.getFile(), true);
+        byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);
+        byte[] valueWriteData = new byte[4 + valueBytes.length];
+
+        System.arraycopy(ByteConverters.intToBytes(valueBytes.length), 0, valueWriteData, 0, 4);
+        System.arraycopy(valueBytes, 0, valueWriteData, 4, valueBytes.length);
+        dataFile.write(valueWriteData);
+        this.lastPosition += valueWriteData.length;
+        dataFile.close();
+        // write the index
+
+        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        int keyLength = keyBytes.length;
+        byte[] indexWriteData = new byte[12 + keyLength];
+        byte[] stringLength = ByteConverters.intToBytes(keyLength);
+        System.arraycopy(stringLength, 0, indexWriteData, 0, 4);
+        System.arraycopy(ByteConverters.longToBytes(position), 0, indexWriteData, 4, 8);
+        System.arraycopy(keyBytes, 0, indexWriteData, 12, keyLength);
+        indexes.write(indexWriteData);
+        keys.add(new DatabaseEntry(key, position));
     }
 
     private int calculateBytesSizeToWrite(String string) {
