@@ -24,7 +24,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
     private boolean read = false;
 
     @Override
-    public void read(File folder, boolean gcAfter) throws IOException {
+    public void connectTo(File folder, boolean gcAfter) throws IOException {
         if(read) {
             throw new IOException("Database is already locked");
         }
@@ -129,7 +129,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
         // read all index files
         for(DatabaseKey entry : keys) {
             if(entry.getKey().equals(key)) {
-                return read(entry.getPosition());
+                return get(entry);
             }
         }
         return null;
@@ -140,10 +140,15 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
         ArrayList<String> result = new ArrayList<>(0);
         for(DatabaseKey entry : keys) {
             if(entry.getKey().equals(key)) {
-                result.add(read(entry.getPosition()));
+                result.add(get(entry));
             }
         }
         return result;
+    }
+
+    @Override
+    public String get(DatabaseKey key) throws IOException {
+        return read(key.getPosition());
     }
 
     private String read(long position) throws IOException {
@@ -255,6 +260,27 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
     @Override
     public EditSession newEditSession() {
         return new EditSessionImpl(this);
+    }
+
+    @Override
+    public DatabaseKey getKeyByName(String name) {
+        for(DatabaseKey key : keys) {
+            if(key.getKey().equals(name)) {
+                return key;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<DatabaseKey> getAllKeysByName(String name) {
+        ArrayList<DatabaseKey> result = new ArrayList<>();
+        for(DatabaseKey key : keys) {
+            if(key.getKey().equals(name)) {
+                result.add(key);
+            }
+        }
+        return result;
     }
 
     @Override
