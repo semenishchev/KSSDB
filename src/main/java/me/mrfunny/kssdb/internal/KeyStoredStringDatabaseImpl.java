@@ -208,7 +208,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
         long position = this.lastPosition + 1;
         FileOutputStream dataFile = new FileOutputStream(lastFile.getFile(), true);
         byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);
-        byte[] valueWriteData = new byte[4 + valueBytes.length];
+        byte[] valueWriteData = new byte[4 + valueBytes.length]; // 4 bytes for length in int
 
         System.arraycopy(ByteConverters.intToBytes(valueBytes.length), 0, valueWriteData, 0, 4);
         System.arraycopy(valueBytes, 0, valueWriteData, 4, valueBytes.length);
@@ -220,7 +220,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
 
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
         int keyLength = keyBytes.length;
-        byte[] indexWriteData = new byte[12 + keyLength];
+        byte[] indexWriteData = new byte[12 + keyLength]; // 12 is for 4 bytes for the length of the key and 8 bytes is for the position in the data section
         byte[] stringLength = ByteConverters.intToBytes(keyLength);
         System.arraycopy(stringLength, 0, indexWriteData, 0, 4);
         System.arraycopy(ByteConverters.longToBytes(position), 0, indexWriteData, 4, 8);
