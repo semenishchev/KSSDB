@@ -1,10 +1,10 @@
 package me.mrfunny.kssdb.internal;
 
-public class DatabaseEntry {
+public class DatabaseKey {
     private final String key;
     private final long position;
 
-    public DatabaseEntry(String key, long position) {
+    public DatabaseKey(String key, long position) {
         this.key = key;
         this.position = position;
     }

@@ -16,7 +16,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
     private final static byte supportedVersion = 0x1; // hex sum of alphabet index of letters kssdb
     public final static int maxFileSize = 32000000;
     public final static int maxKeyLength = 255;
-    private ArrayList<DatabaseEntry> keys;
+    private ArrayList<DatabaseKey> keys;
     private File keyIndexesFile;
     private File metaFile;
     private File dataDirectory;
@@ -80,7 +80,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
                     int length = ByteConverters.bytesToInt(lengthBytes); // the first byte is integer that defines the length of the key
                     long position = ByteConverters.bytesToLong(stream.readNBytes(8)); // 8 bytes for long value, that determines the position of the text in the db
                     String key = new String(stream.readNBytes(length));
-                    keys.add(new DatabaseEntry(key, position));
+                    keys.add(new DatabaseKey(key, position));
                 } catch (IOException e) { // any byte missing - means database is corrupted
                     throw new DatabaseCorruptedException();
                 }
@@ -126,7 +126,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
     @Override
     public String get(String key) throws IOException {
         // read all index files
-        for(DatabaseEntry entry : keys) {
+        for(DatabaseKey entry : keys) {
             if(entry.getKey().equals(key)) {
                 return read(entry.getPosition());
             }
@@ -135,9 +135,9 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
     }
 
     @Override
-    public Collection<String> getAll(String key) throws IOException {
+    public List<String> getAll(String key) throws IOException {
         ArrayList<String> result = new ArrayList<>(0);
-        for(DatabaseEntry entry : keys) {
+        for(DatabaseKey entry : keys) {
             if(entry.getKey().equals(key)) {
                 result.add(read(entry.getPosition()));
             }
@@ -147,15 +147,16 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
 
     private String read(long position) throws IOException {
         IndexedStorageFile storageFile = indexedFiles
-                .parallelStream()
+                .stream()
                 .filter(file -> file.fallsDownIntoIt(position))
                 .findFirst()
                 .orElse(null);
         if(storageFile == null) {
-            throw new DatabaseCorruptedException();
+            System.err.println("No found storage files, returning null: size of them: " + indexedFiles.size());
+            return null;
         }
-
-        int subPosition = (int) (position - storageFile.getPositionStart());
+        int remover = position == 0 ? 0 : 1;
+        int subPosition = (int) (position - storageFile.getPositionStart() - remover);
         String result;
         try(FileInputStream stream = new FileInputStream(storageFile.getFile())) {
             byte[] fileBytes = stream.readAllBytes();
@@ -189,6 +190,11 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
         writeMeta(keys.size());
     }
 
+    @Override
+    public List<DatabaseKey> keys() {
+        return keys;
+    }
+
     private void write(FileOutputStream indexes, String key, String value) throws IOException{
         if(indexedFiles.isEmpty()){
             indexedFiles.add(createNewFile());
@@ -218,7 +224,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
         System.arraycopy(ByteConverters.longToBytes(position), 0, indexWriteData, 4, 8);
         System.arraycopy(keyBytes, 0, indexWriteData, 12, keyLength);
         indexes.write(indexWriteData);
-        keys.add(new DatabaseEntry(key, position));
+        keys.add(new DatabaseKey(key, position));
     }
 
     private int calculateBytesSizeToWrite(String string) {
@@ -251,7 +257,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
 
     @Override
     public boolean containsKey(String key) {
-        for(DatabaseEntry entry : keys) {
+        for(DatabaseKey entry : keys) {
             if(entry.getKey().equals(key)) {
                 return true;
             }

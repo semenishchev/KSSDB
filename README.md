@@ -2,7 +2,6 @@
 Key Stored String Database
 
 ## The best database for logs
-- - -
 A quick example
 ```java
 import java.io.File;
@@ -15,6 +14,7 @@ public class Test {
     }
 }
 ```
+- - -
 When you need to write many strings at once, you can use EditSession or just put the strings in the map
 ```java
 import java.io.File;

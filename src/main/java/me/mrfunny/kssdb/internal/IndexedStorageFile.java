@@ -26,7 +26,7 @@ public class IndexedStorageFile {
     }
 
     public boolean fallsDownIntoIt(long position) {
-        return (position >= positionStart) && (position <= positionEnd);
+        return (position >= positionStart) && (position < positionEnd);
     }
 
     @Override
