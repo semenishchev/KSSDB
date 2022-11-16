@@ -2,6 +2,7 @@
 Key Stored String Database
 
 ## The best database for logs
+Fetches a value under 100ms
 A quick example
 ```java
 import java.io.File;
