@@ -120,6 +120,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
         for(File dataFile : files) {
             indexedFiles.add(new IndexedStorageFile(dataFile, ++metPositions, metPositions += dataFile.length()));
         }
+
         this.lastPosition = metPositions;
     }
 
@@ -213,6 +214,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
         System.arraycopy(valueBytes, 0, valueWriteData, 4, valueBytes.length);
         dataFile.write(valueWriteData);
         this.lastPosition += valueWriteData.length;
+        lastFile.setPositionEnd(lastFile.getPositionEnd() + valueWriteData.length);
         dataFile.close();
         // write the index
 

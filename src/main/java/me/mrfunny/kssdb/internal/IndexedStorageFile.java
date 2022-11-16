@@ -5,7 +5,7 @@ import java.io.File;
 public class IndexedStorageFile {
     private final File theFile;
     private final long positionStart;
-    private final long positionEnd;
+    private long positionEnd;
 
     public IndexedStorageFile(File theFile, long positionStart, long positionEnd) {
         this.theFile = theFile;
@@ -32,5 +32,9 @@ public class IndexedStorageFile {
     @Override
     public String toString() {
         return "IndexedFile{file: " + theFile.getName() + "; start: " + positionEnd + "; end: " + positionEnd + "}";
+    }
+
+    public void setPositionEnd(long positionEnd) {
+        this.positionEnd = positionEnd;
     }
 }

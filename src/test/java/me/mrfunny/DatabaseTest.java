@@ -15,7 +15,7 @@ public class DatabaseTest {
     public void testValue() throws IOException {
         KeyStoredStringDatabase database = KeyStoredStringDatabase.newClient(new File("database"));
 //        database.set("test_0129", "привет мир hello world");
-        database.set("test_0129", "пока мир");
+//        database.set("test_0129", "пока мир");
     }
 
     @Test
@@ -30,10 +30,4 @@ public class DatabaseTest {
         assertEquals("пока мир", all.get(2));
     }
 
-    @Test
-    public void testBareCreation() throws IOException {
-        File folder = new File("idkhowtocallthat");
-        KeyStoredStringDatabase database = KeyStoredStringDatabase.newClient(folder);
-        assertTrue(folder.exists());
-    }
 }
