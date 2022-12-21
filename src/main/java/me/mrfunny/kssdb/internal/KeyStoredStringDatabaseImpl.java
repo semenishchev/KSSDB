@@ -161,7 +161,7 @@ public class KeyStoredStringDatabaseImpl implements KeyStoredStringDatabase {
             System.err.println("No found storage files, returning null: size of them: " + indexedFiles.size());
             return null;
         }
-        int subPosition = (int) (position - storageFile.getPositionStart();
+        int subPosition = (int) (position - storageFile.getPositionStart());
         String result;
         try(FileInputStream stream = new FileInputStream(storageFile.getFile())) {
             byte[] fileBytes = stream.readAllBytes();
