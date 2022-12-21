@@ -24,6 +24,7 @@ public interface KeyStoredStringDatabase {
      * @throws IOException in the process it reads files, so it's needed
      */
     String get(String key) throws IOException;
+
     /**
      * Gets all values from the database by given key
      * @param key The key
@@ -31,6 +32,7 @@ public interface KeyStoredStringDatabase {
      * @throws IOException in the process it reads files, so it's needed
      */
     List<String> getAll(String key) throws IOException;
+
     /**
      * Gets a first values from the database by given key
      * @param key The key
@@ -65,12 +67,14 @@ public interface KeyStoredStringDatabase {
      * @return A new edit session
      */
     EditSession newEditSession();
+
     /**
      * Gets an internal database key for faster reading. Used in case if the key would be referenced in the code multiple times.
      * @param name Internal database key
      * @return A first internal key with associated name
      */
     DatabaseKey getKeyByName(String name);
+
     /**
      * Gets an internal database key for faster reading. Used in case if the key would be referenced in the code multiple times.
      * @param name Internal database key
